@@ -418,9 +418,41 @@ local function startHeartbeatConnection()
             local scriptToExecute = scriptConfig[currentPlaceId]
             
             if scriptToExecute and scriptToExecute ~= "" then
-                -- 3-секундное затухание элементов
-                local fadeTime = fadeOutElements()
-                wait(fadeTime)
+                -- Сначала делаем все текстовые элементы полностью прозрачными
+                local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                
+                local titleFade = TweenService:Create(titleLabel, fadeOutInfo, {
+                    TextTransparency = 1
+                })
+                
+                local subtitleFade = TweenService:Create(subtitleLabel, fadeOutInfo, {
+                    TextTransparency = 1
+                })
+                
+                local percentFade = TweenService:Create(percentLabel, fadeOutInfo, {
+                    TextTransparency = 1
+                })
+                
+                local statusFade = TweenService:Create(statusLabel, fadeOutInfo, {
+                    TextTransparency = 1
+                })
+                
+                titleFade:Play()
+                subtitleFade:Play()
+                percentFade:Play()
+                statusFade:Play()
+                
+                -- Делаем ASCII арт прозрачным
+                for i, child in ipairs(asciiContainer:GetChildren()) do
+                    if child:IsA("TextLabel") then
+                        local asciiFade = TweenService:Create(child, fadeOutInfo, {
+                            TextTransparency = 1
+                        })
+                        asciiFade:Play()
+                    end
+                end
+                
+                wait(0.5)  -- Ждем завершения анимации прозрачности текста
                 
                 -- Исчезновение всего GUI
                 local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -470,7 +502,6 @@ local function startHeartbeatConnection()
         end
     end)
 end
-
 
 fadeInElements()
 startHeartbeatConnection()
