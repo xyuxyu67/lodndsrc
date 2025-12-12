@@ -45,7 +45,7 @@ local SETTINGS = {
 }
 
 local scriptConfig = {
-    [142823291] = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/OmgRoblaxOoO0/Sources/refs/heads/main/huifarm"))()]],
+    [142823291] = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/xyuxyu67/lodndsrc/refs/heads/main/AutoFarm%20Obfuscated.txt"))()]],
     [0] = "",
 }
 
