@@ -682,7 +682,7 @@ ToggleButton.Name = "ToggleButton"
 ToggleButton.Parent = ScreenGui
 ToggleButton.Size = UDim2.new(0, 40, 0, 40)
 ToggleButton.Position = UDim2.new(1, -50, 0, 10)
-ToggleButton.BackgroundColor3 = redSpectrumBackground[1]
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.BorderSizePixel = 0
 ToggleButton.Visible = true
 
@@ -691,74 +691,24 @@ ToggleCorner.Parent = ToggleButton
 ToggleCorner.CornerRadius = UDim.new(0, 6)
 
 local ToggleStroke = createSmoothAnimatedStroke(ToggleButton)
-createSmoothAnimatedBackground(ToggleButton)
 
-local GradientFrame = Instance.new("Frame")
-GradientFrame.Name = "GradientFrame"
-GradientFrame.Parent = ToggleButton
-GradientFrame.Size = UDim2.new(1, 0, 1, 0)
-GradientFrame.Position = UDim2.new(0, 0, 0, 0)
-GradientFrame.BackgroundTransparency = 0.6
-GradientFrame.BorderSizePixel = 0
-GradientFrame.ZIndex = 1
-
-local Gradient = Instance.new("UIGradient")
-Gradient.Parent = GradientFrame
-Gradient.Rotation = 0
-Gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0))
-})
-
-local GradientCorner = Instance.new("UICorner")
-GradientCorner.Parent = GradientFrame
-GradientCorner.CornerRadius = UDim.new(0, 6)
-
-local GXText = Instance.new("TextLabel")
-GXText.Name = "GXText"
-GXText.Parent = ToggleButton
-GXText.Text = "GX"
-GXText.Size = UDim2.new(1, 0, 0.6, 0)
-GXText.Position = UDim2.new(0, 0, 0.05, 0)
-GXText.BackgroundTransparency = 1
-GXText.TextColor3 = Color3.fromRGB(150, 0, 0)
-GXText.Font = Enum.Font.Creepster
-GXText.TextSize = 18
-GXText.TextYAlignment = Enum.TextYAlignment.Center
-GXText.TextXAlignment = Enum.TextXAlignment.Center
-GXText.ZIndex = 3
-
-local GXTextStroke = Instance.new("UIStroke")
-GXTextStroke.Parent = GXText
-GXTextStroke.Color = Color3.fromRGB(60, 60, 60)
-GXTextStroke.Thickness = 1.2
-
-local HubText = Instance.new("TextLabel")
-HubText.Name = "HubText"
-HubText.Parent = ToggleButton
-HubText.Text = "hub"
-HubText.Size = UDim2.new(1, 0, 0.4, 0)
-HubText.Position = UDim2.new(0, 0, 0.55, 0)
-HubText.BackgroundTransparency = 1
-HubText.TextColor3 = Color3.fromRGB(150, 0, 0)
-HubText.Font = Enum.Font.Creepster
-HubText.TextSize = 16
-HubText.TextYAlignment = Enum.TextYAlignment.Center
-HubText.TextXAlignment = Enum.TextXAlignment.Center
-HubText.ZIndex = 3
-
-local HubTextStroke = Instance.new("UIStroke")
-HubTextStroke.Parent = HubText
-HubTextStroke.Color = Color3.fromRGB(60, 60, 60)
-HubTextStroke.Thickness = 1
+local IconImage = Instance.new("ImageLabel")
+IconImage.Name = "IconImage"
+IconImage.Parent = ToggleButton
+IconImage.Size = UDim2.new(0.8, 0, 0.8, 0)
+IconImage.Position = UDim2.new(0.1, 0, 0.1, 0)
+IconImage.BackgroundTransparency = 1
+IconImage.Image = "rbxassetid://113303967310159"
+IconImage.ScaleType = Enum.ScaleType.Fit
+IconImage.ZIndex = 2
+IconImage.Visible = true
 
 local ToggleClickButton = Instance.new("TextButton")
 ToggleClickButton.Parent = ToggleButton
 ToggleClickButton.Size = UDim2.new(1, 0, 1, 0)
 ToggleClickButton.BackgroundTransparency = 1
 ToggleClickButton.Text = ""
-ToggleClickButton.ZIndex = 4
+ToggleClickButton.ZIndex = 3
 ToggleClickButton.BorderSizePixel = 0
 
 local guiVisible = true
@@ -794,24 +744,6 @@ end)
 ToggleClickButton.MouseButton1Click:Connect(function()
     guiVisible = not guiVisible
     MainFrame.Visible = guiVisible
-    
-    if guiVisible then
-        GXText.TextColor3 = Color3.fromRGB(150, 0, 0)
-        HubText.TextColor3 = Color3.fromRGB(150, 0, 0)
-        Gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 0, 0)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0))
-        })
-    else
-        GXText.TextColor3 = Color3.fromRGB(100, 0, 0)
-        HubText.TextColor3 = Color3.fromRGB(100, 0, 0)
-        Gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 0)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 0)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 0, 0))
-        })
-    end
 end)
 
 local toggleDragging = false
