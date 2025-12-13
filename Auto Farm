@@ -3,7 +3,7 @@ local COLOR_PRIMARY_BG = Color3.fromRGB(0, 0, 0)
 local COLOR_BLUE_DARK = Color3.fromRGB(30, 0, 0)
 
 local FARM_SPEED = 22
-local EVENT_CURRENCY = "Candy"
+local EVENT_CURRENCY = "SnowToken"
 local COINS_CURRENCY = "Coin"
 
 local LABEL_BG_TRANSPARENCY = 0.7
