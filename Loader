@@ -5,7 +5,7 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local SETTINGS = {
-    loadTime = 30,
+    loadTime = 15,
     backgroundTransparency = 0.1,
     
     font = Enum.Font.DenkOne,
