@@ -1,81 +1,186 @@
+-- Color Settings
+local COLOR_SETTINGS = {
+    MainBackground = Color3.fromRGB(22, 204, 204),
+    TextColor = Color3.fromRGB(0, 0, 0),
+    LabelBackground = Color3.fromRGB(22, 162, 204),
+    IconCircle = Color3.fromRGB(22, 162, 204),
+    AntiAFKActive = Color3.fromRGB(26, 173, 16),
+    AntiAFKInactive = Color3.fromRGB(200, 0, 0),
+    ToggleOff = Color3.fromRGB(50, 90, 160),
+    ToggleOn = Color3.fromRGB(70, 130, 230),
+    ToggleCircleOff = Color3.fromRGB(100, 160, 255),
+    ToggleCircleOn = Color3.fromRGB(30, 70, 140),
+    TitleColor = Color3.fromRGB(0, 0, 0),
+    ToggleButtonBackground = Color3.fromRGB(255, 255, 255)
+}
+
+-- Scale multiplier
+local SCALE_MULTIPLIER = 1.3
+
+-- General settings (scaled by 1.3x)
 local BACKGROUND_TRANSPARENCY = 0.04
-local COLOR_PRIMARY_BG = Color3.fromRGB(0, 0, 0)
-local COLOR_BLUE_DARK = Color3.fromRGB(30, 0, 0)
-
-local FARM_SPEED = 22
-local EVENT_CURRENCY = "SnowToken"
-local COINS_CURRENCY = "Coin"
-
 local LABEL_BG_TRANSPARENCY = 0.7
-local LABEL_BG_COLOR = Color3.fromRGB(94, 42, 42)
-local LABEL_BG_HEIGHT = 24
-local LABEL_BG_CORNER_RADIUS = 15
-local LABEL_FONT_SIZE = 16
-local TOGGLE_TOP_MARGIN = 45
-local ROW_SPACING = 5
-
-local TOGGLE_WIDTH = 50
-local TOGGLE_HEIGHT = 24
-local TOGGLE_CIRCLE_SIZE = 18
-
-local TOGGLE_CIRCLE_OFF_COLOR = Color3.fromRGB(171, 19, 19)
-local TOGGLE_OFF_COLOR = Color3.fromRGB(40, 40, 40)
-
-local TOGGLE_ON_COLOR = Color3.fromRGB(171, 19, 19)
-local TOGGLE_CIRCLE_ON_COLOR = Color3.fromRGB(40, 40, 40)
-
+local LABEL_BG_HEIGHT = 30 * SCALE_MULTIPLIER
+local LABEL_BG_CORNER_RADIUS = 15 * SCALE_MULTIPLIER
+local LABEL_FONT_SIZE = 18 * SCALE_MULTIPLIER
+local TOGGLE_TOP_MARGIN = 45 * SCALE_MULTIPLIER
+local ROW_SPACING = 5 * SCALE_MULTIPLIER
+local TOGGLE_WIDTH = 60 * SCALE_MULTIPLIER
+local TOGGLE_HEIGHT = 28 * SCALE_MULTIPLIER
+local TOGGLE_CIRCLE_SIZE = 22 * SCALE_MULTIPLIER
 local TOGGLE_CORNER_RADIUS = TOGGLE_HEIGHT/2
 local TOGGLE_ANIMATION_TIME = 0.2
-
-local LABEL_WIDTH_ADJUST = 30
-local ICON_SIZE = 15
+local LABEL_WIDTH_ADJUST = 30 * SCALE_MULTIPLIER
+local ICON_SIZE = 18 * SCALE_MULTIPLIER
 local ICON_CIRCLE_SIZE = LABEL_BG_HEIGHT
 
+-- GUI window sizes (scaled)
+local MAIN_FRAME_WIDTH = 260 * SCALE_MULTIPLIER
+local TOGGLE_BUTTON_SIZE = 40 * SCALE_MULTIPLIER
+local MINIMUM_FRAME_WIDTH = 200 * SCALE_MULTIPLIER
+local MINIMUM_FRAME_HEIGHT = 150 * SCALE_MULTIPLIER
+
+-- Font settings
+local MAIN_FONT = Enum.Font.SourceSansBold
+
+-- Game settings
+local FARM_SPEED = 22
+local EVENT_CURRENCY = "SnowToken"
+
+-- Icons
 local ICON_CIRCLE_OFFSETS = {
     ["Event Farm"] = 0,
-    ["Coin Farm"] = 0,
     ["Auto Reset"] = 0,
-    ["Anti AFK"] = 0,
     ["Disable Rendering"] = 0
 }
 
 local ASSET_IDS = {
     ["Event Farm"] = 83772946070955,
-    ["Coin Farm"] = 98554247256916,
     ["Auto Reset"] = 135643354310855,
-    ["Anti AFK"] = 100938671095940,
     ["Disable Rendering"] = 88413977788163
 }
 
-local WAVE_ANIMATION = {
-    ENABLED = true,
-    BASE_SIZE = ICON_SIZE,
-    SCALE_FACTOR = 1.3,
-    WAVE_INTERVAL = 10,
-    ICON_ANIM_DURATION = 1.0,
-    GROW_DURATION = 0.5,
-    SHRINK_DURATION = 0.5,
-    DELAY_BETWEEN_ICONS = 0.5,
-    EASING_STYLE = Enum.EasingStyle.Quad,
-    EASING_DIRECTION = Enum.EasingDirection.InOut,
-    WAVE_DIRECTION = "top-down"
-}
-
-local TITLE_FONT = Enum.Font.Garamond
-local TOGGLE_FONT = Enum.Font.Antique
-local TIME_FONT = Enum.Font.Garamond
-
+-- Services
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
+-- Optimization variables
+local renderDisabled = false
+local renderStartTime = 0
+local blackScreenFrame = nil
+local coinsCollected = 0
+
+-- Black screen functions
+local function createBlackScreen()
+    if blackScreenFrame and blackScreenFrame.Parent then
+        blackScreenFrame:Destroy()
+    end
+    
+    blackScreenFrame = Instance.new("ScreenGui")
+    blackScreenFrame.Name = "BlackScreenGUI"
+    blackScreenFrame.Parent = player.PlayerGui
+    blackScreenFrame.DisplayOrder = 1
+    blackScreenFrame.IgnoreGuiInset = true
+    blackScreenFrame.ResetOnSpawn = false
+    
+    local fullScreenFrame = Instance.new("Frame")
+    fullScreenFrame.Name = "FullScreenBlack"
+    fullScreenFrame.Parent = blackScreenFrame
+    fullScreenFrame.Size = UDim2.new(1, 0, 1, 0)
+    fullScreenFrame.Position = UDim2.new(0, 0, 0, 0)
+    fullScreenFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+    fullScreenFrame.BackgroundTransparency = 0
+    fullScreenFrame.BorderSizePixel = 0
+    fullScreenFrame.ZIndex = 1
+    
+    local centerContainer = Instance.new("Frame")
+    centerContainer.Parent = fullScreenFrame
+    centerContainer.Name = "CenterContainer"
+    centerContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+    centerContainer.Size = UDim2.new(1, 0, 1, 0)
+    centerContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+    centerContainer.BackgroundTransparency = 1
+    centerContainer.ZIndex = 2
+    
+    local optimizationText = Instance.new("TextLabel")
+    optimizationText.Parent = centerContainer
+    optimizationText.AnchorPoint = Vector2.new(0.5, 0.5)
+    optimizationText.Text = "Optimization Enabled"
+    optimizationText.Size = UDim2.new(0, 300 * SCALE_MULTIPLIER, 0, 40 * SCALE_MULTIPLIER)
+    optimizationText.Position = UDim2.new(0.5, 0, 0.3, 0)
+    optimizationText.BackgroundTransparency = 1
+    optimizationText.TextColor3 = Color3.new(1, 1, 1)
+    optimizationText.Font = MAIN_FONT
+    optimizationText.TextSize = 32 * SCALE_MULTIPLIER
+    optimizationText.TextScaled = false
+    optimizationText.ZIndex = 3
+    
+    local timerText = Instance.new("TextLabel")
+    timerText.Parent = centerContainer
+    timerText.Name = "RenderTimer"
+    timerText.AnchorPoint = Vector2.new(0.5, 0.5)
+    timerText.Text = "00:00:00"
+    timerText.Size = UDim2.new(0, 350 * SCALE_MULTIPLIER, 0, 50 * SCALE_MULTIPLIER)
+    timerText.Position = UDim2.new(0.5, 0, 0.45, 0)
+    timerText.BackgroundTransparency = 1
+    timerText.TextColor3 = Color3.new(1, 1, 1)
+    timerText.Font = MAIN_FONT
+    timerText.TextSize = 40 * SCALE_MULTIPLIER
+    timerText.TextScaled = false
+    timerText.ZIndex = 3
+    
+    local coinsText = Instance.new("TextLabel")
+    coinsText.Parent = centerContainer
+    coinsText.Name = "CoinsCounter"
+    coinsText.AnchorPoint = Vector2.new(0.5, 0.5)
+    coinsText.Text = "Coins collected: 0"
+    coinsText.Size = UDim2.new(0, 250 * SCALE_MULTIPLIER, 0, 30 * SCALE_MULTIPLIER)
+    coinsText.Position = UDim2.new(0.5, 0, 0.55, 0)
+    coinsText.BackgroundTransparency = 1
+    coinsText.TextColor3 = Color3.new(1, 1, 1)
+    coinsText.Font = MAIN_FONT
+    coinsText.TextSize = 24 * SCALE_MULTIPLIER
+    coinsText.TextScaled = false
+    coinsText.ZIndex = 3
+    
+    return blackScreenFrame
+end
+
+local function updateBlackScreenInfo()
+    if renderDisabled and blackScreenFrame then
+        local fullScreenFrame = blackScreenFrame:FindFirstChild("FullScreenBlack")
+        if fullScreenFrame then
+            local centerContainer = fullScreenFrame:FindFirstChild("CenterContainer")
+            if centerContainer then
+                local timerLabel = centerContainer:FindFirstChild("RenderTimer")
+                if timerLabel then
+                    local elapsed = os.time() - renderStartTime
+                    local hours = math.floor(elapsed / 3600)
+                    local minutes = math.floor((elapsed % 3600) / 60)
+                    local seconds = elapsed % 60
+                    
+                    timerLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                end
+                
+                local coinsLabel = centerContainer:FindFirstChild("CoinsCounter")
+                if coinsLabel then
+                    coinsLabel.Text = "Coins collected: " .. tostring(coinsCollected)
+                end
+            end
+        end
+    end
+end
+
+-- Anti-AFK system
 local AntiAFKEnabled = false
 local VirtualUser = game:GetService("VirtualUser")
 local antiAFKConnection = nil
@@ -147,13 +252,87 @@ local function SetupAntiAFK(enabled)
     end
 end
 
+-- Farm system
 local EventFarmStarted = false
 local EventFarmIN = false
 local eventfarmstopevent = Instance.new("BindableEvent")
-local CoinsFarmStarted = false
-local CoinsFarmIN = false
-local coinsfarmstopevent = Instance.new("BindableEvent")
 local AutoResetEnabled = false
+
+-- NoClip system for farming
+local noclipConnection = nil
+
+local function setupFarmNoClip(enabled)
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    
+    if enabled then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if EventFarmStarted and EventFarmIN and player.Character then
+                local char = player.Character
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        local char = player.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+-- Character death/respawn handling
+local function handleCharacterDeath()
+    if EventFarmStarted then
+        EventFarmIN = false
+        eventfarmstopevent:Fire()
+        setupFarmNoClip(false)
+    end
+end
+
+local function monitorCharacterDeath()
+    local function onCharacterAdded(char)
+        local humanoid = char:WaitForChild("Humanoid", 5)
+        if humanoid then
+            humanoid.Died:Connect(function()
+                handleCharacterDeath()
+            end)
+            
+            if char:GetAttribute("Alive") == false then
+                handleCharacterDeath()
+            end
+        end
+        
+        char:GetAttributeChangedSignal("Alive"):Connect(function()
+            if char:GetAttribute("Alive") == false then
+                handleCharacterDeath()
+            end
+        end)
+        
+        if EventFarmStarted then
+            task.wait(1)
+            if EventFarmIN then
+                setupFarmNoClip(true)
+            end
+        end
+    end
+    
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+monitorCharacterDeath()
 
 local CoinCollectedEvent = ReplicatedStorage.Remotes.Gameplay.CoinCollected
 local RoundStartEvent = ReplicatedStorage.Remotes.Gameplay.RoundStart
@@ -166,12 +345,6 @@ local function returncoincontaier()
         end
     end
     return false
-end
-
-local function PcallTP(Position)
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = Position
-    end
 end
 
 local function FindNearestCoin(container, coinType)
@@ -206,21 +379,11 @@ CoinCollectedEvent.OnClientEvent:Connect(function(cointype, current, max)
     if EventFarmStarted and EventFarmIN then
         if cointype == EVENT_CURRENCY then
             EventFarmIN = true
+            coinsCollected = coinsCollected + 1
         end
         if cointype == EVENT_CURRENCY and tonumber(current) == tonumber(max) then
             EventFarmIN = false
-            if AutoResetEnabled then
-                killCharacter()
-            end
-        end
-    end
-    
-    if CoinsFarmStarted and CoinsFarmIN then
-        if cointype == COINS_CURRENCY then
-            CoinsFarmIN = true
-        end
-        if cointype == COINS_CURRENCY and tonumber(current) == tonumber(max) then
-            CoinsFarmIN = false
+            setupFarmNoClip(false)
             if AutoResetEnabled then
                 killCharacter()
             end
@@ -231,18 +394,14 @@ end)
 RoundStartEvent.OnClientEvent:Connect(function()
     if EventFarmStarted then
         EventFarmIN = true
-    end
-    if CoinsFarmStarted then
-        CoinsFarmIN = true
+        setupFarmNoClip(true)
     end
 end)
 
 RoundEndEvent.OnClientEvent:Connect(function()
     if EventFarmStarted then
         EventFarmIN = false
-    end
-    if CoinsFarmStarted then
-        CoinsFarmIN = false
+        setupFarmNoClip(false)
     end
 end)
 
@@ -285,117 +444,27 @@ task.spawn(function()
     end
 end)
 
-task.spawn(function()
-    while true do
-        if CoinsFarmStarted and CoinsFarmIN and player.Character and returncoincontaier() and player:GetAttribute("Alive") then
-            local coinData = FindNearestCoin(returncoincontaier(), COINS_CURRENCY)
-            if coinData[1] ~= nil then
-                local distance = coinData[2]
-                
-                local tween = TweenService:Create(
-                    player.Character.HumanoidRootPart, 
-                    TweenInfo.new(distance / FARM_SPEED, Enum.EasingStyle.Linear), 
-                    {CFrame = CFrame.new(coinData[1].Position)}
-                )
-                tween:Play()
-                
-                local connection
-                connection = coinsfarmstopevent.Event:Connect(function()
-                    tween:Cancel()
-                    connection:Disconnect()
-                end)
-                
-                while coinData[1] and coinData[1]:FindFirstChild("TouchInterest") do
-                    task.wait()
-                end
-                
-                tween:Cancel()
-                if connection then
-                    connection:Disconnect()
-                end
-                task.wait(0.1)
-            else
-                task.wait(0.3)
-            end
-        else
-            task.wait(0.3)
-        end
-        task.wait(0.01)
-    end
-end)
-
-local redSpectrumStroke = {
-    Color3.fromRGB(40, 0, 0),
-    Color3.fromRGB(50, 0, 0),
-    Color3.fromRGB(60, 0, 0),
-    Color3.fromRGB(70, 0, 0),
-    Color3.fromRGB(80, 0, 0),
-    Color3.fromRGB(90, 0, 0),
-    Color3.fromRGB(100, 0, 0),
-    Color3.fromRGB(110, 0, 0),
-    Color3.fromRGB(120, 0, 0),
-    Color3.fromRGB(130, 0, 0),
-    Color3.fromRGB(140, 0, 0),
-    Color3.fromRGB(150, 0, 0)
+-- Purple colors for outline
+local purpleSpectrumStroke = {
+    Color3.fromRGB(138, 43, 226),
+    Color3.fromRGB(128, 38, 216),
+    Color3.fromRGB(118, 33, 206),
+    Color3.fromRGB(108, 28, 196),
+    Color3.fromRGB(98, 23, 186),
+    Color3.fromRGB(88, 18, 176),
+    Color3.fromRGB(78, 13, 166),
+    Color3.fromRGB(68, 8, 156),
+    Color3.fromRGB(58, 3, 146),
+    Color3.fromRGB(48, 0, 136),
+    Color3.fromRGB(38, 0, 126),
+    Color3.fromRGB(28, 0, 116)
 }
-
-local redSpectrumBackground = {
-    Color3.fromRGB(150, 0, 0),
-    Color3.fromRGB(140, 0, 0),
-    Color3.fromRGB(130, 0, 0),
-    Color3.fromRGB(120, 0, 0),
-    Color3.fromRGB(110, 0, 0),
-    Color3.fromRGB(100, 0, 0),
-    Color3.fromRGB(90, 0, 0),
-    Color3.fromRGB(80, 0, 0),
-    Color3.fromRGB(70, 0, 0),
-    Color3.fromRGB(60, 0, 0),
-    Color3.fromRGB(50, 0, 0),
-    Color3.fromRGB(40, 0, 0)
-}
-
-local function createAnimatedCircleColor(circleFrame)
-    local currentIndex = 1
-    local direction = 1
-    local step = 0.1
-    local colorValue = 0
-    
-    coroutine.wrap(function()
-        while circleFrame.Parent do
-            local currentColor = redSpectrumStroke[currentIndex]
-            local nextColor = redSpectrumStroke[currentIndex + direction] or redSpectrumStroke[1]
-            
-            circleFrame.BackgroundColor3 = Color3.new(
-                currentColor.R + (nextColor.R - currentColor.R) * colorValue,
-                currentColor.G + (nextColor.G - currentColor.G) * colorValue,
-                currentColor.B + (nextColor.B - currentColor.B) * colorValue
-            )
-            
-            colorValue = colorValue + step
-            
-            if colorValue >= 1 then
-                colorValue = 0
-                currentIndex = currentIndex + direction
-                
-                if currentIndex >= #redSpectrumStroke then
-                    currentIndex = #redSpectrumStroke - 1
-                    direction = -1
-                elseif currentIndex <= 1 then
-                    currentIndex = 2
-                    direction = 1
-                end
-            end
-            
-            wait(0.03)
-        end
-    end)()
-end
 
 local function createSmoothAnimatedStroke(frame)
     local stroke = Instance.new("UIStroke")
     stroke.Parent = frame
-    stroke.Color = redSpectrumStroke[1]
-    stroke.Thickness = 2
+    stroke.Color = purpleSpectrumStroke[1]
+    stroke.Thickness = 2 * SCALE_MULTIPLIER
     
     local currentIndex = 1
     local direction = 1
@@ -404,8 +473,8 @@ local function createSmoothAnimatedStroke(frame)
     
     coroutine.wrap(function()
         while stroke.Parent do
-            local currentColor = redSpectrumStroke[currentIndex]
-            local nextColor = redSpectrumStroke[currentIndex + direction] or redSpectrumStroke[1]
+            local currentColor = purpleSpectrumStroke[currentIndex]
+            local nextColor = purpleSpectrumStroke[currentIndex + direction] or purpleSpectrumStroke[1]
             
             stroke.Color = Color3.new(
                 currentColor.R + (nextColor.R - currentColor.R) * colorValue,
@@ -419,8 +488,8 @@ local function createSmoothAnimatedStroke(frame)
                 colorValue = 0
                 currentIndex = currentIndex + direction
                 
-                if currentIndex >= #redSpectrumStroke then
-                    currentIndex = #redSpectrumStroke - 1
+                if currentIndex >= #purpleSpectrumStroke then
+                    currentIndex = #purpleSpectrumStroke - 1
                     direction = -1
                 elseif currentIndex <= 1 then
                     currentIndex = 2
@@ -435,138 +504,6 @@ local function createSmoothAnimatedStroke(frame)
     return stroke
 end
 
-local function createSmoothAnimatedBackground(frame)
-    local currentIndex = 1
-    local direction = 1
-    local step = 0.1
-    local colorValue = 0
-    
-    coroutine.wrap(function()
-        while frame.Parent do
-            local currentColor = redSpectrumBackground[currentIndex]
-            local nextColor = redSpectrumBackground[currentIndex + direction] or redSpectrumBackground[1]
-            
-            frame.BackgroundColor3 = Color3.new(
-                currentColor.R + (nextColor.R - currentColor.R) * colorValue,
-                currentColor.G + (nextColor.G - currentColor.G) * colorValue,
-                currentColor.B + (nextColor.B - currentColor.B) * colorValue
-            )
-            
-            colorValue = colorValue + step
-            
-            if colorValue >= 1 then
-                colorValue = 0
-                currentIndex = currentIndex + direction
-                
-                if currentIndex >= #redSpectrumBackground then
-                    currentIndex = #redSpectrumBackground - 1
-                    direction = -1
-                elseif currentIndex <= 1 then
-                    currentIndex = 2
-                    direction = 1
-                end
-            end
-            
-            wait(0.03)
-        end
-    end)()
-end
-
-local function createWaveAnimation(icons)
-    coroutine.wrap(function()
-        while WAVE_ANIMATION.ENABLED do
-            local iconOrder = {}
-            if WAVE_ANIMATION.WAVE_DIRECTION == "top-down" then
-                iconOrder = icons
-            else
-                for i = #icons, 1, -1 do
-                    table.insert(iconOrder, icons[i])
-                end
-            end
-            
-            for i = 1, #iconOrder do
-                local icon = iconOrder[i]
-                
-                if icon and icon.Parent then
-                    task.spawn(function()
-                        local growTween = TweenService:Create(
-                            icon,
-                            TweenInfo.new(
-                                WAVE_ANIMATION.GROW_DURATION,
-                                WAVE_ANIMATION.EASING_STYLE,
-                                WAVE_ANIMATION.EASING_DIRECTION
-                            ),
-                            {
-                                Size = UDim2.new(
-                                    0, WAVE_ANIMATION.BASE_SIZE * WAVE_ANIMATION.SCALE_FACTOR, 
-                                    0, WAVE_ANIMATION.BASE_SIZE * WAVE_ANIMATION.SCALE_FACTOR
-                                )
-                            }
-                        )
-                        
-                        local moveToCenter = TweenService:Create(
-                            icon,
-                            TweenInfo.new(
-                                WAVE_ANIMATION.GROW_DURATION,
-                                WAVE_ANIMATION.EASING_STYLE,
-                                WAVE_ANIMATION.EASING_DIRECTION
-                            ),
-                            {
-                                Position = UDim2.new(
-                                    0.5, -(WAVE_ANIMATION.BASE_SIZE * WAVE_ANIMATION.SCALE_FACTOR)/2,
-                                    0.5, -(WAVE_ANIMATION.BASE_SIZE * WAVE_ANIMATION.SCALE_FACTOR)/2
-                                )
-                            }
-                        )
-                        
-                        growTween:Play()
-                        moveToCenter:Play()
-                        
-                        task.wait(WAVE_ANIMATION.GROW_DURATION)
-                        
-                        local shrinkTween = TweenService:Create(
-                            icon,
-                            TweenInfo.new(
-                                WAVE_ANIMATION.SHRINK_DURATION,
-                                WAVE_ANIMATION.EASING_STYLE,
-                                WAVE_ANIMATION.EASING_DIRECTION
-                            ),
-                            {
-                                Size = UDim2.new(
-                                    0, WAVE_ANIMATION.BASE_SIZE, 
-                                    0, WAVE_ANIMATION.BASE_SIZE
-                                )
-                            }
-                        )
-                        
-                        local returnToCenter = TweenService:Create(
-                            icon,
-                            TweenInfo.new(
-                                WAVE_ANIMATION.SHRINK_DURATION,
-                                WAVE_ANIMATION.EASING_STYLE,
-                                WAVE_ANIMATION.EASING_DIRECTION
-                            ),
-                            {
-                                Position = UDim2.new(
-                                    0.5, -WAVE_ANIMATION.BASE_SIZE/2, 
-                                    0.5, -WAVE_ANIMATION.BASE_SIZE/2
-                                )
-                            }
-                        )
-                        
-                        shrinkTween:Play()
-                        returnToCenter:Play()
-                    end)
-                end
-                
-                task.wait(WAVE_ANIMATION.DELAY_BETWEEN_ICONS)
-            end
-            
-            task.wait(WAVE_ANIMATION.WAVE_INTERVAL)
-        end
-    end)()
-end
-
 if player.PlayerGui:FindFirstChild("MyCustomGUI") then
     player.PlayerGui.MyCustomGUI:Destroy()
 end
@@ -575,33 +512,42 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MyCustomGUI"
 ScreenGui.Parent = player.PlayerGui
 ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 100
 
 local ToggleItems = {
     {Name = "Event Farm"},
-    {Name = "Coin Farm"},
     {Name = "Auto Reset"},
-    {Name = "Anti AFK"},
     {Name = "Disable Rendering"}
 }
 
 local TOTAL_TOGGLES = #ToggleItems
 local TOTAL_ROWS_HEIGHT = TOGGLE_TOP_MARGIN + (TOTAL_TOGGLES * LABEL_BG_HEIGHT) + ((TOTAL_TOGGLES - 1) * ROW_SPACING)
-local INFO_PANEL_HEIGHT = 40
-local MAIN_FRAME_HEIGHT = TOTAL_ROWS_HEIGHT + INFO_PANEL_HEIGHT + 10
+local INFO_PANEL_HEIGHT = 40 * SCALE_MULTIPLIER
+local MAIN_FRAME_HEIGHT = TOTAL_ROWS_HEIGHT + INFO_PANEL_HEIGHT + 10 * SCALE_MULTIPLIER
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = COLOR_PRIMARY_BG
-MainFrame.Size = UDim2.new(0, 260, 0, MAIN_FRAME_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -MAIN_FRAME_HEIGHT/2)
+MainFrame.BackgroundColor3 = COLOR_SETTINGS.MainBackground
+MainFrame.Size = UDim2.new(0, MAIN_FRAME_WIDTH, 0, MAIN_FRAME_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -MAIN_FRAME_WIDTH/2, 0.5, -MAIN_FRAME_HEIGHT/2)
 MainFrame.BackgroundTransparency = BACKGROUND_TRANSPARENCY
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = true
+MainFrame.ZIndex = 100
+
+MainFrame:GetPropertyChangedSignal("Size"):Connect(function()
+    if MainFrame.AbsoluteSize.X < MINIMUM_FRAME_WIDTH then
+        MainFrame.Size = UDim2.new(0, MINIMUM_FRAME_WIDTH, MainFrame.Size.Y.Scale, MainFrame.Size.Y.Offset)
+    end
+    if MainFrame.AbsoluteSize.Y < MINIMUM_FRAME_HEIGHT then
+        MainFrame.Size = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, 0, MINIMUM_FRAME_HEIGHT)
+    end
+end)
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.Parent = MainFrame
-MainCorner.CornerRadius = UDim.new(0, 15)
+MainCorner.CornerRadius = UDim.new(0, 15 * SCALE_MULTIPLIER)
 
 local MainStroke = createSmoothAnimatedStroke(MainFrame)
 
@@ -648,20 +594,14 @@ end)
 
 local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
-Title.Text = "GandonX - AutoFarm 🎄"
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "Amethyst | Christmas Farm 🎄"
+Title.Size = UDim2.new(1, 0, 0, 40 * SCALE_MULTIPLIER)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.BackgroundTransparency = 1
-Title.TextColor3 = Color3.fromRGB(150, 0, 0)
-Title.Font = TITLE_FONT
-Title.TextSize = 20
-Title.TextStrokeTransparency = 0
-Title.ZIndex = 2
-
-local TitleStroke = Instance.new("UIStroke")
-TitleStroke.Parent = Title
-TitleStroke.Color = Color3.fromRGB(80, 0, 0)
-TitleStroke.Thickness = 1.5
+Title.TextColor3 = COLOR_SETTINGS.TitleColor
+Title.Font = MAIN_FONT
+Title.TextSize = 20 * SCALE_MULTIPLIER
+Title.ZIndex = 101
 
 Title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -680,15 +620,21 @@ end)
 local ToggleButton = Instance.new("Frame")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Parent = ScreenGui
-ToggleButton.Size = UDim2.new(0, 40, 0, 40)
-ToggleButton.Position = UDim2.new(1, -50, 0, 10)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Size = UDim2.new(0, TOGGLE_BUTTON_SIZE, 0, TOGGLE_BUTTON_SIZE)
+ToggleButton.Position = UDim2.new(1, -TOGGLE_BUTTON_SIZE - 10, 0, 10)
+ToggleButton.BackgroundColor3 = COLOR_SETTINGS.ToggleButtonBackground
 ToggleButton.BorderSizePixel = 0
 ToggleButton.Visible = true
+ToggleButton.ZIndex = 100
+
+local TOGGLE_BUTTON_MIN_SIZE = 35 * SCALE_MULTIPLIER
+if TOGGLE_BUTTON_SIZE < TOGGLE_BUTTON_MIN_SIZE then
+    ToggleButton.Size = UDim2.new(0, TOGGLE_BUTTON_MIN_SIZE, 0, TOGGLE_BUTTON_MIN_SIZE)
+end
 
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.Parent = ToggleButton
-ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.CornerRadius = UDim.new(0, 6 * SCALE_MULTIPLIER)
 
 local ToggleStroke = createSmoothAnimatedStroke(ToggleButton)
 
@@ -698,9 +644,9 @@ IconImage.Parent = ToggleButton
 IconImage.Size = UDim2.new(0.8, 0, 0.8, 0)
 IconImage.Position = UDim2.new(0.1, 0, 0.1, 0)
 IconImage.BackgroundTransparency = 1
-IconImage.Image = "rbxassetid://113303967310159"
+IconImage.Image = "rbxassetid://74474558059435"
 IconImage.ScaleType = Enum.ScaleType.Fit
-IconImage.ZIndex = 2
+IconImage.ZIndex = 101
 IconImage.Visible = true
 
 local ToggleClickButton = Instance.new("TextButton")
@@ -708,7 +654,7 @@ ToggleClickButton.Parent = ToggleButton
 ToggleClickButton.Size = UDim2.new(1, 0, 1, 0)
 ToggleClickButton.BackgroundTransparency = 1
 ToggleClickButton.Text = ""
-ToggleClickButton.ZIndex = 3
+ToggleClickButton.ZIndex = 102
 ToggleClickButton.BorderSizePixel = 0
 
 local guiVisible = true
@@ -718,8 +664,8 @@ local function playPressAnimation()
         ToggleButton,
         TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
         {
-            Size = UDim2.new(0, 36, 0, 36),
-            Position = UDim2.new(1, -48, 0, 12)
+            Size = UDim2.new(0, TOGGLE_BUTTON_SIZE * 0.9, 0, TOGGLE_BUTTON_SIZE * 0.9),
+            Position = UDim2.new(1, -(TOGGLE_BUTTON_SIZE * 0.9) - 8, 0, 12)
         }
     )
     
@@ -727,8 +673,8 @@ local function playPressAnimation()
         ToggleButton,
         TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
         {
-            Size = UDim2.new(0, 40, 0, 40),
-            Position = UDim2.new(1, -50, 0, 10)
+            Size = UDim2.new(0, TOGGLE_BUTTON_SIZE, 0, TOGGLE_BUTTON_SIZE),
+            Position = UDim2.new(1, -TOGGLE_BUTTON_SIZE - 10, 0, 10)
         }
     )
     
@@ -782,20 +728,20 @@ local allIcons = {}
 
 for i, item in ipairs(ToggleItems) do
     local name = item.Name
-    local font = TOGGLE_FONT
     
-    local toggleX = 260 - TOGGLE_WIDTH - 10
-    local labelWidth = toggleX - 10 + LABEL_WIDTH_ADJUST
+    local toggleX = MAIN_FRAME_WIDTH - TOGGLE_WIDTH - 10 * SCALE_MULTIPLIER
+    local labelWidth = toggleX - 10 * SCALE_MULTIPLIER + LABEL_WIDTH_ADJUST
     
     local labelBackground = Instance.new("Frame")
     labelBackground.Name = "LabelBG_" .. name:gsub(" ", "")
     labelBackground.Parent = MainFrame
     labelBackground.Size = UDim2.new(0, labelWidth, 0, LABEL_BG_HEIGHT)
-    labelBackground.Position = UDim2.new(0, 10, 0, TOGGLE_TOP_MARGIN + (i-1)*(LABEL_BG_HEIGHT + ROW_SPACING))
-    labelBackground.BackgroundColor3 = LABEL_BG_COLOR
+    labelBackground.Position = UDim2.new(0, 10 * SCALE_MULTIPLIER, 0, TOGGLE_TOP_MARGIN + (i-1)*(LABEL_BG_HEIGHT + ROW_SPACING))
+    labelBackground.BackgroundColor3 = COLOR_SETTINGS.LabelBackground
     labelBackground.BackgroundTransparency = LABEL_BG_TRANSPARENCY
     labelBackground.BorderSizePixel = 0
     labelBackground.Visible = true
+    labelBackground.ZIndex = 101
     
     local labelBGCorner = Instance.new("UICorner")
     labelBGCorner.Parent = labelBackground
@@ -806,16 +752,15 @@ for i, item in ipairs(ToggleItems) do
     iconCircle.Name = "IconCircle"
     iconCircle.Size = UDim2.new(0, ICON_CIRCLE_SIZE, 0, ICON_CIRCLE_SIZE)
     iconCircle.Position = UDim2.new(0, ICON_CIRCLE_OFFSETS[name], 0, 0)
-    iconCircle.BackgroundColor3 = redSpectrumStroke[1]
-    iconCircle.BackgroundTransparency = 0.6
+    iconCircle.BackgroundColor3 = COLOR_SETTINGS.IconCircle
+    iconCircle.BackgroundTransparency = 0.3
     iconCircle.BorderSizePixel = 0
     iconCircle.Visible = true
+    iconCircle.ZIndex = 102
     
     local iconCircleCorner = Instance.new("UICorner")
     iconCircleCorner.Parent = iconCircle
     iconCircleCorner.CornerRadius = UDim.new(1, 0)
-    
-    createAnimatedCircleColor(iconCircle)
     
     local icon = Instance.new("ImageLabel")
     icon.Parent = iconCircle
@@ -826,36 +771,33 @@ for i, item in ipairs(ToggleItems) do
     icon.Image = "rbxassetid://" .. tostring(ASSET_IDS[name])
     icon.ScaleType = Enum.ScaleType.Fit
     icon.Visible = true
+    icon.ZIndex = 103
     
     table.insert(allIcons, icon)
     
     local label = Instance.new("TextLabel")
     label.Parent = labelBackground
     label.Text = name
-    label.Size = UDim2.new(1, -(ICON_CIRCLE_SIZE + ICON_CIRCLE_OFFSETS[name] + 8), 1, 0)
-    label.Position = UDim2.new(0, ICON_CIRCLE_SIZE + ICON_CIRCLE_OFFSETS[name] + 4, 0, 0)
+    label.Size = UDim2.new(1, -(ICON_CIRCLE_SIZE + ICON_CIRCLE_OFFSETS[name] + 8 * SCALE_MULTIPLIER), 1, 0)
+    label.Position = UDim2.new(0, ICON_CIRCLE_SIZE + ICON_CIRCLE_OFFSETS[name] + 4 * SCALE_MULTIPLIER, 0, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(150, 0, 0)
-    label.Font = font
+    label.TextColor3 = COLOR_SETTINGS.TextColor
+    label.Font = MAIN_FONT
     label.TextSize = LABEL_FONT_SIZE
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.TextYAlignment = Enum.TextYAlignment.Center
     label.Visible = true
-    
-    local labelStroke = Instance.new("UIStroke")
-    labelStroke.Parent = label
-    labelStroke.Color = Color3.fromRGB(80, 0, 0)
-    labelStroke.Thickness = 1
+    label.ZIndex = 101
     
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle_" .. name:gsub(" ", "")
     toggleFrame.Parent = MainFrame
     toggleFrame.Size = UDim2.new(0, TOGGLE_WIDTH, 0, TOGGLE_HEIGHT)
     toggleFrame.Position = UDim2.new(0, toggleX, 0, TOGGLE_TOP_MARGIN + (i-1)*(LABEL_BG_HEIGHT + ROW_SPACING) + (LABEL_BG_HEIGHT - TOGGLE_HEIGHT)/2)
-    toggleFrame.BackgroundColor3 = TOGGLE_OFF_COLOR
+    toggleFrame.BackgroundColor3 = COLOR_SETTINGS.ToggleOff
     toggleFrame.BorderSizePixel = 0
     toggleFrame.Visible = true
-    toggleFrame.ZIndex = 2
+    toggleFrame.ZIndex = 101
     
     local round = Instance.new("UICorner")
     round.Parent = toggleFrame
@@ -864,23 +806,24 @@ for i, item in ipairs(ToggleItems) do
     local circle = Instance.new("Frame")
     circle.Name = "circle"
     circle.Parent = toggleFrame
+    circle.AnchorPoint = Vector2.new(0, 0.5)
     circle.Size = UDim2.new(0, TOGGLE_CIRCLE_SIZE, 0, TOGGLE_CIRCLE_SIZE)
-    circle.Position = UDim2.new(0, 3, 0, (TOGGLE_HEIGHT - TOGGLE_CIRCLE_SIZE)/2)
-    circle.BackgroundColor3 = TOGGLE_CIRCLE_OFF_COLOR
+    circle.Position = UDim2.new(0, 3 * SCALE_MULTIPLIER, 0.5, 0)
+    circle.BackgroundColor3 = COLOR_SETTINGS.ToggleCircleOff
     circle.BorderSizePixel = 0
-    circle.ZIndex = 3
+    circle.ZIndex = 102
     circle.Visible = true
     
     local roundCircle = Instance.new("UICorner")
     roundCircle.Parent = circle
-    roundCircle.CornerRadius = UDim.new(0, TOGGLE_CIRCLE_SIZE/2)
+    roundCircle.CornerRadius = UDim.new(1, 0)
     
     local clickButton = Instance.new("TextButton")
     clickButton.Parent = toggleFrame
     clickButton.Size = UDim2.new(1, 0, 1, 0)
     clickButton.BackgroundTransparency = 1
     clickButton.Text = ""
-    clickButton.ZIndex = 4
+    clickButton.ZIndex = 103
     clickButton.BorderSizePixel = 0
     
     local toggled = false
@@ -892,17 +835,17 @@ for i, item in ipairs(ToggleItems) do
             toggleFrame,
             TweenInfo.new(TOGGLE_ANIMATION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {
-                BackgroundColor3 = toggled and TOGGLE_ON_COLOR or TOGGLE_OFF_COLOR
+                BackgroundColor3 = toggled and COLOR_SETTINGS.ToggleOn or COLOR_SETTINGS.ToggleOff
             }
         )
         bgTween:Play()
         
-        local targetX = toggled and (TOGGLE_WIDTH - TOGGLE_CIRCLE_SIZE - 3) or 3
+        local targetX = toggled and (TOGGLE_WIDTH - TOGGLE_CIRCLE_SIZE - 3 * SCALE_MULTIPLIER) or 3 * SCALE_MULTIPLIER
         local circleMoveTween = TweenService:Create(
             circle,
             TweenInfo.new(TOGGLE_ANIMATION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {
-                Position = UDim2.new(0, targetX, 0, (TOGGLE_HEIGHT - TOGGLE_CIRCLE_SIZE)/2)
+                Position = UDim2.new(0, targetX, 0.5, 0)
             }
         )
         circleMoveTween:Play()
@@ -911,7 +854,7 @@ for i, item in ipairs(ToggleItems) do
             circle,
             TweenInfo.new(TOGGLE_ANIMATION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {
-                BackgroundColor3 = toggled and TOGGLE_CIRCLE_ON_COLOR or TOGGLE_CIRCLE_OFF_COLOR
+                BackgroundColor3 = toggled and COLOR_SETTINGS.ToggleCircleOn or COLOR_SETTINGS.ToggleCircleOff
             }
         )
         circleColorTween:Play()
@@ -920,53 +863,37 @@ for i, item in ipairs(ToggleItems) do
             if toggled then
                 EventFarmStarted = true
                 EventFarmIN = true
-                if CoinsFarmStarted then
-                    CoinsFarmStarted = false
-                    CoinsFarmIN = false
-                    coinsfarmstopevent:Fire()
-                    
-                    if ToggleElements["Coin Farm"] then
-                        local coinToggle = ToggleElements["Coin Farm"]
-                        if coinToggle.toggled then
-                            coinToggle.toggleFunction()
-                        end
-                    end
-                end
+                SetupAntiAFK(true)
+                coinsCollected = 0
+                setupFarmNoClip(true)
             else
                 EventFarmStarted = false
                 EventFarmIN = false
                 eventfarmstopevent:Fire()
-            end
-        elseif name == "Coin Farm" then
-            if toggled then
-                CoinsFarmStarted = true
-                CoinsFarmIN = true
-                if EventFarmStarted then
-                    EventFarmStarted = false
-                    EventFarmIN = false
-                    eventfarmstopevent:Fire()
-                    
-                    if ToggleElements["Event Farm"] then
-                        local eventToggle = ToggleElements["Event Farm"]
-                        if eventToggle.toggled then
-                            eventToggle.toggleFunction()
-                        end
-                    end
-                end
-            else
-                CoinsFarmStarted = false
-                CoinsFarmIN = false
-                coinsfarmstopevent:Fire()
+                SetupAntiAFK(false)
+                setupFarmNoClip(false)
             end
         elseif name == "Auto Reset" then
             AutoResetEnabled = toggled
-        elseif name == "Anti AFK" then
-            SetupAntiAFK(toggled)
         elseif name == "Disable Rendering" then
             if toggled then
-                game:GetService("RunService"):Set3dRenderingEnabled(false)
+                renderDisabled = true
+                renderStartTime = os.time()
+                RunService:Set3dRenderingEnabled(false)
+                createBlackScreen()
+                task.spawn(function()
+                    while renderDisabled do
+                        updateBlackScreenInfo()
+                        task.wait(1)
+                    end
+                end)
             else
-                game:GetService("RunService"):Set3dRenderingEnabled(true)
+                renderDisabled = false
+                if blackScreenFrame then
+                    blackScreenFrame:Destroy()
+                    blackScreenFrame = nil
+                end
+                RunService:Set3dRenderingEnabled(true)
             end
         end
     end
@@ -983,19 +910,16 @@ for i, item in ipairs(ToggleItems) do
     }
 end
 
-if WAVE_ANIMATION.ENABLED and #allIcons > 0 then
-    createWaveAnimation(allIcons)
-end
-
-local lastToggleY = TOGGLE_TOP_MARGIN + ((#ToggleItems - 1) * (LABEL_BG_HEIGHT + ROW_SPACING)) + LABEL_BG_HEIGHT + 5
+local lastToggleY = TOGGLE_TOP_MARGIN + ((#ToggleItems - 1) * (LABEL_BG_HEIGHT + ROW_SPACING)) + LABEL_BG_HEIGHT + 5 * SCALE_MULTIPLIER
 
 local InfoPanel = Instance.new("Frame")
 InfoPanel.Name = "InfoPanel"
 InfoPanel.Parent = MainFrame
 InfoPanel.BackgroundTransparency = 1
-InfoPanel.Size = UDim2.new(1, -20, 0, INFO_PANEL_HEIGHT)
-InfoPanel.Position = UDim2.new(0, 10, 0, lastToggleY)
+InfoPanel.Size = UDim2.new(1, -20 * SCALE_MULTIPLIER, 0, INFO_PANEL_HEIGHT)
+InfoPanel.Position = UDim2.new(0, 10 * SCALE_MULTIPLIER, 0, lastToggleY)
 InfoPanel.Visible = true
+InfoPanel.ZIndex = 101
 
 local AntiAFKText = Instance.new("TextLabel")
 AntiAFKText.Name = "AntiAFKText"
@@ -1003,16 +927,12 @@ AntiAFKText.Parent = InfoPanel
 AntiAFKText.Size = UDim2.new(1, 0, 0.5, 0)
 AntiAFKText.Position = UDim2.new(0, 0, 0, 0)
 AntiAFKText.BackgroundTransparency = 1
-AntiAFKText.Font = TIME_FONT
-AntiAFKText.TextSize = 14
+AntiAFKText.Font = MAIN_FONT
+AntiAFKText.TextSize = 14 * SCALE_MULTIPLIER
 AntiAFKText.TextXAlignment = Enum.TextXAlignment.Left
-AntiAFKText.TextColor3 = Color3.fromRGB(150, 0, 0)
+AntiAFKText.TextColor3 = COLOR_SETTINGS.TextColor
 AntiAFKText.Visible = true
-
-local AntiAFKStroke = Instance.new("UIStroke")
-AntiAFKStroke.Parent = AntiAFKText
-AntiAFKStroke.Color = Color3.fromRGB(80, 0, 0)
-AntiAFKStroke.Thickness = 1
+AntiAFKText.ZIndex = 101
 
 local GameTimeStatus = Instance.new("TextLabel")
 GameTimeStatus.Name = "GameTimeStatus"
@@ -1020,35 +940,30 @@ GameTimeStatus.Parent = InfoPanel
 GameTimeStatus.Size = UDim2.new(1, 0, 0.5, 0)
 GameTimeStatus.Position = UDim2.new(0, 0, 0.5, 0)
 GameTimeStatus.BackgroundTransparency = 1
-GameTimeStatus.Font = TIME_FONT
-GameTimeStatus.TextSize = 14
+GameTimeStatus.Font = MAIN_FONT
+GameTimeStatus.TextSize = 14 * SCALE_MULTIPLIER
 GameTimeStatus.TextXAlignment = Enum.TextXAlignment.Left
-GameTimeStatus.TextColor3 = Color3.fromRGB(150, 0, 0)
+GameTimeStatus.TextColor3 = COLOR_SETTINGS.TextColor
 GameTimeStatus.Visible = true
-
-local GameTimeStroke = Instance.new("UIStroke")
-GameTimeStroke.Parent = GameTimeStatus
-GameTimeStroke.Color = Color3.fromRGB(80, 0, 0)
-GameTimeStroke.Thickness = 1
+GameTimeStatus.ZIndex = 101
 
 local startTime = tick()
 
 local function formatTime(seconds)
-    local days = math.floor(seconds / 86400)
-    local hours = math.floor((seconds % 86400) / 3600)
+    local hours = math.floor(seconds / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
     local secs = math.floor(seconds % 60)
     
-    return string.format("%02dd.%02dh.%02dm.%02ds", days, hours, minutes, secs)
+    return string.format("%02d:%02d:%02d", hours, minutes, secs)
 end
 
 local function updateInfoPanel()
     if AntiAFKEnabled then
         AntiAFKText.Text = "AntiAfk: Active"
-        AntiAFKText.TextColor3 = Color3.fromRGB(20, 163, 58)
+        AntiAFKText.TextColor3 = COLOR_SETTINGS.AntiAFKActive
     else
         AntiAFKText.Text = "AntiAfk: Inactive"
-        AntiAFKText.TextColor3 = Color3.fromRGB(255, 0, 0)
+        AntiAFKText.TextColor3 = COLOR_SETTINGS.AntiAFKInactive
     end
     
     local elapsedTime = tick() - startTime
