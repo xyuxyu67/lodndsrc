@@ -18,7 +18,7 @@ local function createLoader()
     }
 
     local scriptConfig = {
-        [142823291] = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/xyuxyu67/lodndsrc/refs/heads/main/AutoFarm%20Obfuscated.txt"))()]],
+        [142823291] = [[loadstring(game:HttpGet(""))()]],
     }
 
     local player = Players.LocalPlayer
